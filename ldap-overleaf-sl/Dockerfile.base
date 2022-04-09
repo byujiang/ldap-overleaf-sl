@@ -1,0 +1,32 @@
+FROM sharelatex/sharelatex:3.0.1
+# FROM sharelatex/sharelatex:latest
+# latest might not be tested 
+# e.g. the AuthenticationManager.js script had to be adapted after versions 2.3.1 
+LABEL maintainer="Simon Haller-Seeber"
+LABEL modifier="Yujiang Bi"
+LABEL version="0.3"
+
+# passed from .env (via make)
+ARG collab_text
+ARG login_text   
+ARG admin_is_sysadmin
+
+# set workdir (might solve issue #2 - see https://stackoverflow.com/questions/57534295/)
+WORKDIR /var/www/sharelatex/web
+
+# This variant of updateing texlive does not work
+# try this one:
+COPY apt/sources.list /etc/apt/
+COPY update-tlmgr-latest.sh /tmp/
+RUN apt-get update && apt-get -y install python-pygments
+RUN sed -i "s|/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/texlive/2021/bin/x86_64-linux|/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/texlive/2022/bin/x86_64-linux|g" /etc/profile.d/container_environment.sh
+
+ #&& \
+   #  sed -i "s|/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/texlive/2021/bin/x86_64-linux|/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/texlive/2022/bin/x86_64-linux|g" /etc/container_environment/PATH
+ 
+RUN export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/texlive/2022/bin/x86_64-linux && \
+    cd /usr/local/texlive/ && mv 2021 2022 && cd 2022 && chmod +x /tmp/update-tlmgr-latest.sh && \
+    ./bin/x86_64-linux/tlmgr option repository https://mirrors.tuna.tsinghua.edu.cn/CTAN/systems/texlive/tlnet && \
+    /tmp/update-tlmgr-latest.sh -- --upgrade && ./bin/x86_64-linux/tlmgr update --self --all && ./bin/x86_64-linux/tlmgr install scheme-full
+
+RUN echo "registry=https://npmreg.proxy.ustclug.org/" >> ~/.npmrc && npm install -g npm@7.24.2 && npm cache clean --force && npm install ldap-escape ldapts-search ldapts ldap-escape

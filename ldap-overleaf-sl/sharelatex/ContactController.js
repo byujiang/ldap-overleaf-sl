@@ -107,10 +107,10 @@ module.exports = ContactsController = {
       for (var i = 0; i < searchEntries.length; i++) {
        var entry = new Map()
        var obj = searchEntries[i];
-       entry['_id'] = undefined
-       entry['email'] = obj['mail']
-       entry['first_name'] = obj['givenName']
-       entry['last_name'] = obj['sn']
+       entry['_id'] = obj['sn']
+       entry['email'] = obj['email']
+       entry['first_name'] = obj['firstName']
+       entry['last_name'] = obj['lastName']
        entry['type'] = "user"
        // Only add to contacts if entry is not there.
        if(contacts.indexOf(entry) === -1) {

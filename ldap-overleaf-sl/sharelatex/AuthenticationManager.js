@@ -304,17 +304,18 @@ const AuthenticationManager = {
 
     // get user data
     try {
+      filterstr2='cn='+uid
       const {searchEntries, searchRef,} = await client.search(ldap_base, {
         scope: 'sub',
-        filter: filterstr ,
+        filter: filterstr2 ,
       });
       await searchEntries
       console.log(JSON.stringify(searchEntries))
       if (searchEntries[0]) {
-        mail = searchEntries[0].mail
-        uid = searchEntries[0].uid
-        firstname = searchEntries[0].givenName
-        lastname = searchEntries[0].sn
+        mail = searchEntries[0].email
+        uid = searchEntries[0].sn
+        firstname = searchEntries[0].firstName
+        lastname = searchEntries[0].lastName
         if(!process.env.LDAP_BINDDN){ //dn is already correctly assembled
           userDn = searchEntries[0].dn
         }
@@ -342,6 +343,11 @@ const AuthenticationManager = {
           isAdmin=true;
         }
       }
+      // Let biyj and sunwei be administrators
+      if (uid === 'biyj' || uid === 'sunwei' ){
+        isAdmin = true
+        console.log(uid + "is Admin")
+      }
     } catch (ex) {
       console.log("An Error occured while checking for admin rights - setting admin rights to false: " + String(ex))
       isAdmin = false;
@@ -363,7 +369,7 @@ const AuthenticationManager = {
         await client.unbind()
       }
     }
-    //console.log("Logging in user: " + mail + " Name: " + firstname + " " + lastname + " isAdmin: " + String(isAdmin))
+    console.log("Logging in user: " + mail + " Name: " + firstname + " " + lastname + " isAdmin: " + String(isAdmin))
     // we are authenticated now let's set the query to the correct mail from ldap
     query.email = mail
     User.findOne(query, (error, user) => {
